@@ -1,0 +1,32 @@
+name: Enforce Branch Promotion Flow
+
+on:
+  pull_request:
+    branches:
+      - test
+      - main
+
+jobs:
+  enforce-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate promotion rules
+        run: |
+          echo "Base branch: ${{github.base_ref}}"
+          echo "Head branch: ${{github.head_ref}}"
+
+          if [[ "${{ github.base_ref }}" == "test" ]]; then
+            if [[ ! "${{github.head_ref}}" =~ ^feature/ ]]; then
+              echo "❌ Only feature/* branches can merge into test."
+              exit 1
+            fi
+          fi
+
+          if [[ "${{ github.base_ref }}" == "main" ]]; then
+            if [[ "${{ github.head_ref }}" != "test" ]]; then
+              echo "❌ Only test branch can merge into main."
+              exit 1
+            fi
+          fi
+
+          echo "✅ Branch flow is valid."
