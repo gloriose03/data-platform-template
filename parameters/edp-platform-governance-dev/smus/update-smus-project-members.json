@@ -1,0 +1,16 @@
+{
+  "DOMAIN_NAME": "test-domain",
+  "PROJECT_NAME": "test-project",
+  "MEMBER_ACTION": "add",
+  "DESIGNATION": "PROJECT_CONTRIBUTOR",
+  "MEMBERS": [
+    {
+      "type": "group",
+      "id": "group-123"
+    },
+    {
+      "type": "user",
+      "id": "user-456"
+    }
+  ]
+}

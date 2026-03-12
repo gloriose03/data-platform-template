@@ -1,0 +1,52 @@
+# ==========================================================
+# AWS SMUS Project Membership Configuration
+#
+# This file is the SOURCE OF TRUTH for all project membership
+# in the AWS account below.
+# Whenever the workflow runs, it will ensure the members in the
+# SMUS projects match exactly what is defined in this file.
+#
+# - Members listed here will be granted access to the specified
+#   domains and projects.
+# - Each member can belong to multiple domain/projects.
+# - If a member is removed from this file, their access will
+#   also be removed from the AWS console SMS project.
+#
+# This structure allows a single user to have different roles
+# across multiple domains and projects.
+#
+# ----------------------------------------------------------
+# Allowed designation values:
+#   PROJECT_OWNER
+#   PROJECT_CONTRIBUTOR
+#   PROJECT_CATALOG_VIEWER
+#   PROJECT_CATALOG_CONSUMER
+#   PROJECT_CATALOG_STEWARD
+#
+# Example template (copy this block when adding a new member)
+# - email: your.name@company.co.uk
+#   domain_projects:
+#     - domain_name: example_domain
+#       project_name: example_project
+#       designation: PROJECT_CONTRIBUTOR
+# ==========================================================
+
+account:
+  number: "1234567890" # AWS account number
+  name: aws_account_name_test # name of the AWS account
+
+members:
+  - id: name.surname@company.co.uk
+    domain_projects:
+      - domain_name: the_data_team_domain
+        project_name: airflow_project
+        designation: PROJECT_CONTRIBUTOR
+      - domain_name: the_second_domain_team
+        project_name: another_project
+        designation: PROJECT_OWNER
+
+  - id: anothername.anothersurname@company.co.uk
+    domain_projects:
+      - domain_name: the_data_team_domain
+        project_name: airflow_project
+        designation: PROJECT_OWNER

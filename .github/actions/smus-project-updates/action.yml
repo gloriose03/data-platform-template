@@ -1,0 +1,24 @@
+name: run-python-deployer
+
+inputs:
+  environment:
+    required: true
+  target:
+    required: true
+  parameter_group:
+    required: true
+  deployment_action:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+
+    - shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        TARGET: ${{ inputs.target }}
+        PARAMETER_GROUP: ${{ inputs.parameter_group }}
+      run: |
+        python "${{ github.action_path }}/${{ inputs.deployment_action }}.py"
