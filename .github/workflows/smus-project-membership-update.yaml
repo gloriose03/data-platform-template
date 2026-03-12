@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+      - uses: actions/checkout@v4
+
       - name: Run script
         uses: ./.github/actions/smus-project-updates
         with:
