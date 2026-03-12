@@ -17,5 +17,5 @@ jobs:
         with:
           environment: dev
           target: governance
-          parameter_group: update-project-members
+          parameter_group: update-smus-project-members
           deployment_action: update_project_members
