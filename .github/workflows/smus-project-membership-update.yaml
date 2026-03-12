@@ -1,0 +1,17 @@
+name: Test Script
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run script
+        uses: ./.github/actions/smus-project-updates
+        with:
+          environment: dev
+          target: governance
+          parameter_group: update-project-members
+          deployment_action: update_project_members

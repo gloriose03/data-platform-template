@@ -1,0 +1,11 @@
+{
+  "DOMAIN_NAME": "test-domain",
+  "PROJECT_NAME": "test-project",
+  "MEMBER_ACTION": "add",
+  "MEMBERS": [
+    {
+      "type": "group",
+      "id": "test-group"
+    }
+  ]
+}
