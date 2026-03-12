@@ -1,5 +1,7 @@
 from pathlib import Path
 import yaml
+import boto3
+from botocore.exceptions import ClientError
 
 ALLOWED_DESIGNATIONS = {
     "PROJECT_OWNER",
