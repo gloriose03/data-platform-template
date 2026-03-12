@@ -70,14 +70,14 @@ def flatten_memberships(members):
     flattened = []
 
     for member in members:
-        email = member.get("email")
+        id = member.get("id")
         domain_projects = member.get("domain_projects", [])
 
-        if not email:
-            raise ValueError(f"Member is missing 'email': {member}")
+        if not id:
+            raise ValueError(f"Member is missing 'id': {member}")
 
         if not isinstance(domain_projects, list):
-            raise ValueError(f"'domain_projects' must be a list for member: {email}")
+            raise ValueError(f"'domain_projects' must be a list for member: {id}")
 
         for project in domain_projects:
             domain_name = project.get("domain_name")
@@ -87,12 +87,12 @@ def flatten_memberships(members):
             if not domain_name or not project_name or not designation:
                 raise ValueError(
                     f"Each domain_projects entry must include domain_name, "
-                    f"project_name, and designation. Problem member: {email}"
+                    f"project_name, and designation. Problem member: {id}"
                 )
 
             flattened.append(
                 {
-                    "email": email.strip().lower(),
+                    "id": id.strip().lower(),
                     "domain_name": str(domain_name).strip(),
                     "project_name": str(project_name).strip(),
                     "designation": str(designation).strip(),
@@ -126,7 +126,7 @@ try:
     print("\nProcessed membership records:")
     for idx, record in enumerate(flattened_memberships, start=1):
         print(
-            f"{idx}. email={record['email']}, "
+            f"{idx}. id={record['id']}, "
             f"domain_name={record['domain_name']}, "
             f"project_name={record['project_name']}, "
             f"designation={record['designation']}"

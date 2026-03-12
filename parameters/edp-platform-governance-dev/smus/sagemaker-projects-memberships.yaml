@@ -1,17 +1,34 @@
 # ==========================================================
-# Project Membership Configuration
+# AWS SMUS Project Membership Configuration
 #
-# Add your details under the "members" section to request
-# access to one or more SMUS projects into an account.
+# This file is the SOURCE OF TRUTH for all project membership
+# in the AWS account below.
+# Whenever the workflow runs, it will ensure the members in the
+# SMUS projects match exactly what is defined in this file.
 #
+# - Members listed here will be granted access to the specified
+#   domains and projects.
 # - Each member can belong to multiple domain/projects.
-# - Add a new block under "members" with your email and the
-#   projects you need access to.
 # - If a member is removed from this file, their access will
-#   also be removed automatically.
+#   also be removed from the AWS console SMS project.
 #
-# This structure is used because users may require different
-# roles across multiple domains and projects.
+# This structure allows a single user to have different roles
+# across multiple domains and projects.
+#
+# ----------------------------------------------------------
+# Allowed designation values:
+#   PROJECT_OWNER
+#   PROJECT_CONTRIBUTOR
+#   PROJECT_CATALOG_VIEWER
+#   PROJECT_CATALOG_CONSUMER
+#   PROJECT_CATALOG_STEWARD
+#
+# Example template (copy this block when adding a new member)
+# - email: your.name@company.co.uk
+#   domain_projects:
+#     - domain_name: example_domain
+#       project_name: example_project
+#       designation: PROJECT_CONTRIBUTOR
 # ==========================================================
 
 account:
@@ -19,7 +36,7 @@ account:
   name: aws_account_name_test # name of the AWS account
 
 members:
-  - email: name.surname@company.co.uk
+  - id: name.surname@company.co.uk
     domain_projects:
       - domain_name: the_data_team_domain
         project_name: airflow_project
@@ -28,7 +45,7 @@ members:
         project_name: another_project
         designation: PROJECT_OWNER
 
-  - email: anothername.anothersurname@company.co.uk
+  - id: anothername.anothersurname@company.co.uk
     domain_projects:
       - domain_name: the_data_team_domain
         project_name: airflow_project
