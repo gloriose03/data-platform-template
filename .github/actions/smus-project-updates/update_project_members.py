@@ -1,106 +1,138 @@
-import json
 import os
 import sys
 from pathlib import Path
+import yaml
 
 
-# Get values passed from workflow / action.yml
 checkout_env = os.environ.get("ENVIRONMENT", "").strip()
-parameter_group = os.environ.get("PARAMETER_GROUP", "").strip()
 target = os.environ.get("TARGET", "").strip()
+parameter_group = os.environ.get("PARAMETER_GROUP", "").strip()
 
 print("outputs from update_project_members.py")
 print(f"parameter_group: {parameter_group}")
 print(f"target: {target}")
 print(f"checkout_env_python: {checkout_env}")
 
-code_var = {}
 
-
-def build_member_payload(member_entry):
+def load_membership_file():
     """
-    Expected member_entry examples:
-      {"type": "user", "id": "abc123"} user --> userIdentifier
-      {"type": "group", "id": "group-123"} group --> groupIdentifier
+    Looks for <parameter_group>.yaml or <parameter_group>.yml
+    inside the matching parameters folder.
     """
-    member_type = str(member_entry.get("type", "")).strip().lower()
-    member_id = str(member_entry.get("id", "")).strip()
+    for dirpath in Path("parameters").iterdir():
+        parts = dirpath.name.split("-")
+        if len(parts) < 2:
+            continue
 
-    if not member_type or not member_id:
-        raise ValueError(f"Invalid member entry: {member_entry}")
+        if parts[-1] == checkout_env and parts[-2] == target:
+            print(f"Checking directory: {dirpath}")
 
-    if member_type == "user":
-        return {"userIdentifier": member_id}
+            for entry in Path(dirpath).iterdir():
+                if entry.is_dir():
+                    for nested_entry in Path(entry).iterdir():
+                        if nested_entry.is_file() and nested_entry.name in {
+                            f"{parameter_group}.yaml",
+                            f"{parameter_group}.yml",
+                        }:
+                            print(f"Found membership file path: {nested_entry}")
+                            with open(nested_entry, "r", encoding="utf-8") as f:
+                                return yaml.safe_load(f), nested_entry
 
-    if member_type == "group":
-        return {"groupIdentifier": member_id}
-
-    raise ValueError(f"Unsupported member type '{member_type}' in entry: {member_entry}")
+    return None, None
 
 
-# Locate and load the matching parameter file
-for dirpath in Path("parameters").iterdir():
-    if dirpath.name.split("-")[-1] == checkout_env and dirpath.name.split("-")[-2] == target:
-        print(f"Checking directory: {dirpath}")
-        for entry in Path(dirpath).iterdir():
-            if entry.is_dir():
-                for nested_entry in Path(entry).iterdir():
-                    if nested_entry.is_file() and str(nested_entry.name) == f"{parameter_group}.json":
-                        print(f"Found parameter file path: {nested_entry}")
-                        with open(nested_entry, "r") as f:
-                            code_var[parameter_group] = json.load(f)
+def validate_config(config):
+    if not isinstance(config, dict):
+        raise ValueError("Top-level YAML structure must be a mapping/object.")
 
-if parameter_group not in code_var:
-    print(f"CRITICAL: Parameter file for '{parameter_group}' was not found.")
-    sys.exit(1)
+    account = config.get("account")
+    members = config.get("members")
 
-print(f"Environment configs for {parameter_group}:")
-for key, value in code_var[parameter_group].items():
-    print(f"{key:25} : {value}")
+    if not isinstance(account, dict):
+        raise ValueError("Missing or invalid 'account' section.")
 
-# Expected values from JSON
-DOMAIN_NAME = code_var[parameter_group].get("DOMAIN_NAME")
-PROJECT_NAME = code_var[parameter_group].get("PROJECT_NAME")
-MEMBERS = code_var[parameter_group].get("MEMBERS", [])
-MEMBER_ACTION = str(code_var[parameter_group].get("MEMBER_ACTION", "")).strip().lower()
-DESIGNATION = code_var[parameter_group].get("DESIGNATION", "PROJECT_CONTRIBUTOR")
+    if not isinstance(members, list):
+        raise ValueError("Missing or invalid 'members' section. It must be a list.")
 
-required_vars = [DOMAIN_NAME, PROJECT_NAME, MEMBER_ACTION]
+    account_number = account.get("number")
+    account_name = account.get("name")
 
-if any(v in [None, ""] for v in required_vars):
-    print("CRITICAL: Missing required configuration values.")
-    sys.exit(1)
+    if not account_number or not account_name:
+        raise ValueError("Account must include both 'number' and 'name'.")
 
-if MEMBER_ACTION not in ["add", "delete"]:
-    print("CRITICAL: MEMBER_ACTION must be 'add' or 'delete'.")
-    sys.exit(1)
+    return account, members
 
-if not isinstance(MEMBERS, list):
-    print("CRITICAL: MEMBERS must be a list.")
-    sys.exit(1)
 
-if not MEMBERS:
-    print("CRITICAL: MEMBERS list is empty.")
-    sys.exit(1)
+def flatten_memberships(members):
+    """
+    Converts nested YAML into a flat list of records.
+    """
+    flattened = []
 
-processed_members = []
+    for member in members:
+        email = member.get("email")
+        domain_projects = member.get("domain_projects", [])
+
+        if not email:
+            raise ValueError(f"Member is missing 'email': {member}")
+
+        if not isinstance(domain_projects, list):
+            raise ValueError(f"'domain_projects' must be a list for member: {email}")
+
+        for project in domain_projects:
+            domain_name = project.get("domain_name")
+            project_name = project.get("project_name")
+            designation = project.get("designation")
+
+            if not domain_name or not project_name or not designation:
+                raise ValueError(
+                    f"Each domain_projects entry must include domain_name, "
+                    f"project_name, and designation. Problem member: {email}"
+                )
+
+            flattened.append(
+                {
+                    "email": email.strip().lower(),
+                    "domain_name": str(domain_name).strip(),
+                    "project_name": str(project_name).strip(),
+                    "designation": str(designation).strip(),
+                }
+            )
+
+    return flattened
+
 
 try:
-    for idx, member_entry in enumerate(MEMBERS, start=1):
-        member_payload = build_member_payload(member_entry)
-        processed_members.append(member_payload)
-        print(f"Processed member {idx}: {member_payload}")
+    config, file_path = load_membership_file()
 
-    print("\nProcessed values ready for boto/DataZone step:")
-    print(f"DOMAIN_NAME   : {DOMAIN_NAME}")
-    print(f"PROJECT_NAME  : {PROJECT_NAME}")
-    print(f"MEMBER_ACTION : {MEMBER_ACTION}")
-    print(f"DESIGNATION   : {DESIGNATION}")
-    print(f"MEMBER_COUNT  : {len(processed_members)}")
-    print("MEMBER_PAYLOADS:")
-    print(json.dumps(processed_members, indent=2))
+    if not config:
+        print(f"CRITICAL: Could not find {parameter_group}.yaml or {parameter_group}.yml")
+        sys.exit(1)
 
-    print("\nSUCCESS: Inputs validated and member payloads prepared.")
+    print(f"Loaded file: {file_path}")
+
+    account, members = validate_config(config)
+
+    print("Account details:")
+    print(f"  number: {account['number']}")
+    print(f"  name  : {account['name']}")
+
+    flattened_memberships = flatten_memberships(members)
+
+    if not flattened_memberships:
+        print("CRITICAL: No membership records found in YAML file.")
+        sys.exit(1)
+
+    print("\nProcessed membership records:")
+    for idx, record in enumerate(flattened_memberships, start=1):
+        print(
+            f"{idx}. email={record['email']}, "
+            f"domain_name={record['domain_name']}, "
+            f"project_name={record['project_name']}, "
+            f"designation={record['designation']}"
+        )
+
+    print(f"\nSUCCESS: Prepared {len(flattened_memberships)} membership record(s) from YAML.")
     sys.exit(0)
 
 except Exception as e:
